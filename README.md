@@ -50,6 +50,8 @@ found:
   
   まずcount_ticket関数でRUNNABLEなプロセスのチケット総数(=sum_tick) を計算する。
   次に 0以上sum_tick未満の乱数を生成し、これを当選したチケット (winner) とし、以後for文で当選したプロセスを探して実行している。
+  また選ばれたプロセスの called_timesは1インクリメントし、確認用にwin_tick, sum_tick も更新している。
+  
   ```
   
   scheduler(void)
@@ -102,4 +104,66 @@ found:
 こちらから引用させてもらいました。https://github.com/avaiyang/xv6-lottery-scheduling/blob/master/rand.c
 線形合同法で乱数生成を自作することも考えたが、時間の都合上諦めた。
 とりあえず random_at_most(long max) 関数で0以上max未満の乱数を生成できる。
+
+### 動作確認
+下のプログラムで、親プロセスと子プロセスを平行実行させて確認した。それぞれチケットを20，10まいずつ配り、約10秒間並行実行させた。
+その後当選番号、合計チケット数、チケット保持数、呼ばれた回数を出力する。
+
+結果は次のようになった。チケット枚数と呼び出された回数の比がおおよそ一致しており、parentは当選番号0~19、childは20~29で選ばれている(正確には分からないが)と考えられるので、ただしく実装できたと考えられる。
+```
+$ ./test_lottery
+
+parent
+winner = 2
+sum tickets=30
+my tickets=20
+calledtimes=68
+$ 
+child
+winner = 24
+sum tickets=30
+my tickets=10
+calledtimes=37
+```
+
+
+```
+#include "kernel/types.h"
+#include "kernel/stat.h"
+#include "user/user.h"
+
+int
+main(int argc, char *argv[]){
+	int pid;
+	int start, end;
+	start = uptime();
+	if((pid = fork()) == 0){
+		change_tickets(10);
+		while(1){
+			end = uptime();
+			if((end-start) > 100)
+				break;
+		}
+		printf("\nchild\nwinner = %d\nsum tickets=%d\nmy tickets=%d\ncalledtimes=%d\n", return_winner(), return_sum_tickets(), return_tickets(), return_called_times());
+		exit(1);
+
+	} else if(pid > 0){
+		change_tickets(20);
+		while(1){
+			end = uptime();
+			if((end-start) > 100)
+				break;
+		}
+		printf("\nparent\nwinner = %d\nsum tickets=%d\nmy tickets=%d\ncalledtimes=%d\n", return_winner(), return_sum_tickets(), return_tickets(), return_called_times());
+		exit(1);
+		
+	} else {
+		exit(1);
+	}
+
+	wait(0);
+	exit(1);
+}
+
+```
 
