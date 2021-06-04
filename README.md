@@ -169,3 +169,27 @@ main(int argc, char *argv[]){
 
 ```
 
+### システムコール
+上のプログラムで使ったシステムコールについて
+
+#### チケット枚数を変える　change_ticket
+```
+uint64
+sys_change_tickets(void)
+{
+	int tick;
+	if(argint(0, &tick) < 0)
+	  return -1;
+	myproc()->tickets = tick;
+	return 0;
+}
+```
+
+#### チケット枚数を出力する　return_tickets
+```
+uint64
+sys_return_tickets(void)
+{
+	return myproc()->tickets;
+}
+```
